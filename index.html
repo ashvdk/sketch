@@ -1,0 +1,123 @@
+<html>
+    <head>
+        <title>Sketch</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script src="/socket.io/socket.io.js"></script>
+    </head>
+    <body style="margin: 0;">
+        <canvas id="canvas" style="border: 1px solid;"></canvas>
+    </body>
+    <script>
+    var socket = io();
+    // function sendmessage() {
+    //     socket.emit('message', "How are you");
+    // }
+
+    window.addEventListener('load', ()=>{
+        resize(); 
+        document.addEventListener("mousedown",startDrawingClient);
+        document.addEventListener("mousemove",draw);
+        document.addEventListener("mouseup",stopDrawing);
+    })
+
+    const canvas = document.querySelector('#canvas'); 
+    
+
+    const ctx = canvas.getContext('2d'); 
+
+    let letsPaintClient = false;
+
+    //initial value
+    let clientCoord = {clientX:0 , clientY:0}; 
+    let serverCoord = {clientX:0 , clientY:0};  
+
+    function resize(){ 
+        ctx.canvas.width = window.innerWidth; 
+        ctx.canvas.height = window.innerHeight; 
+    } 
+
+    function getPositionClient(e){ 
+        clientCoord.clientX = e.clientX; 
+        clientCoord.clientY = e.clientY; 
+    }
+
+    function getPositionServer(coord){ 
+        serverCoord.clientX = coord.clientX; 
+        serverCoord.clientY = coord.clientY; 
+    }
+
+    //sockets to receive coordinates to mark the starting point
+    socket.on('start', (startingCoOrdinates) => {
+        console.log(startingCoOrdinates)
+        startDrawingServer(startingCoOrdinates)
+    });
+    //socket to receive coordinates to draw
+    socket.on('draw', (cordinatesToDrawLine) => {
+        startServerDrawLines(cordinatesToDrawLine)
+    });
+
+    function draw(e) 
+    {
+        if(letsPaintClient)
+        {
+            ctx.beginPath(); 
+            ctx.lineWidth = 12; 
+            ctx.lineCap = 'round';   
+            ctx.strokeStyle = 'black'; 
+            ctx.moveTo(clientCoord.clientX,clientCoord.clientY);
+            getPositionClient(e)
+            ctx.lineTo(clientCoord.clientX,clientCoord.clientY);
+            ctx.stroke();
+            socket.emit("draw",clientCoord)
+        }
+    }
+    function startServerDrawLines(cordinatesToDrawLine) {
+        ctx.beginPath(); 
+        ctx.lineWidth = 12; 
+        ctx.lineCap = 'round';   
+        ctx.strokeStyle = 'black'; 
+        ctx.moveTo(serverCoord.clientX,serverCoord.clientY);
+        getPositionServer(cordinatesToDrawLine)
+        ctx.lineTo(serverCoord.clientX,serverCoord.clientY);
+        ctx.stroke();
+    }
+    function startDrawingClient(e) {
+        letsPaintClient = true;
+        getPositionClient(e)
+        socket.emit("start",clientCoord);
+        // let coord = {
+        //     clientX:0,
+        //     clientY:0
+        // }
+        // coord.clientX = e.clientX;
+        // coord.clientY = e.clientY;
+        // socket.emit('startCoOrdinates', coord);
+        // ctx.beginPath(); 
+        // ctx.lineWidth = 12; 
+        // ctx.lineCap = 'round';   
+        // ctx.strokeStyle = 'black'; 
+        // ctx.moveTo(e.clientX,e.clientY);
+        // ctx.lineTo(e.clientX,e.clientY);
+        // ctx.stroke();
+    }
+    function startDrawingServer(startingCoOrdinates) {
+        getPositionServer(startingCoOrdinates)
+    }
+    // function startDrawingServer(c)
+    // {
+    //     console.log(c);
+    //     ctx.beginPath(); 
+    //     ctx.lineWidth = 12; 
+    //     ctx.lineCap = 'round';   
+    //     ctx.strokeStyle = 'black'; 
+    //     ctx.moveTo(c.clientX,c.clientY);
+    //     ctx.lineTo(c.clientX,c.clientY);
+    //     ctx.stroke();
+    // }
+
+    function stopDrawing() {
+        letsPaintClient = false;
+        clientCoord = {x:0 , y:0};
+    }
+    </script>
+</html>

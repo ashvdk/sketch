@@ -7,15 +7,11 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    console.log('a user connected');
     socket.on("start",(startingCoOrdinates) => {
         socket.broadcast.emit("start",startingCoOrdinates)
     })
-    // socket.on('startCoOrdinates', (cood) => {
-    //     socket.broadcast.emit('startCoOrdinates',cood);
-    // });
     socket.on('draw', (cordinatesToDrawLine) => {
-        //console.log(cordinatesToDrawLine)
+        console.log('corordinates are in the server.');
         socket.broadcast.emit('draw',cordinatesToDrawLine);
     });
     socket.on('disconnect', () => {
